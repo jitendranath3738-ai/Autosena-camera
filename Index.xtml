@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Auto Sena • Live Camera Desk</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background-color: #051F15;
+      color: #FFFFFF;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 24px 16px;
+      margin: 0;
+    }
+    .badge {
+      background: #083D2A;
+      color: #FFD700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #D4AF37;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    h2 { margin: 10px 0; color: #4ADE80; font-size: 20px; }
+    p { color: #94A3B8; font-size: 13px; line-height: 1.4; margin-bottom: 26px; }
+    .btn-cam {
+      background: linear-gradient(135deg, #10B981, #047857);
+      color: #FFFFFF;
+      font-size: 17px;
+      font-weight: bold;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 12px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+    #fileInput { display: none; }
+    .status { margin-top: 20px; font-size: 13px; color: #FACC15; }
+  </style>
+</head>
+<body>
+  <div class="badge">🔒 SECURE FORENSIC CAMERA</div>
+  <h2>📸 लाइव साक्ष्य कैमरा</h2>
+  <p>गैलरी या पुरानी फोटो अमान्य है। केवल मौके से रियर कैमरा द्वारा लाइव फोटो ली जा सकती है।</p>
+
+  <input type="file" id="fileInput" accept="image/*" capture="environment">
+  <button class="btn-cam" onclick="document.getElementById('fileInput').click()">📸 कैमरा खोलें (Live Shutter)</button>
+  <div id="status" class="status"></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const st = document.getElementById('status');
+      st.innerText = "⏳ जीपीएस व साक्ष्य एन्क्रिप्ट हो रहा है...";
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => sendToBot(file, pos.coords.latitude, pos.coords.longitude),
+          (err) => sendToBot(file, 0.0, 0.0),
+          { timeout: 7000, enableHighAccuracy: true }
+        );
+      } else {
+        sendToBot(file, 0.0, 0.0);
+      }
+    });
+
+    function sendToBot(file, lat, lon) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          const max_w = 1200;
+          const scale = max_w / img.width;
+          canvas.width = (img.width > max_w) ? max_w : img.width;
+          canvas.height = (img.width > max_w) ? (img.height * scale) : img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedB64 = canvas.toDataURL("image/jpeg", 0.85);
+          const payload = {
+            image_data: compressedB64,
+            lat: lat,
+            lon: lon,
+            timestamp: Date.now()
+          };
+          tg.sendData(JSON.stringify(payload));
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>
